@@ -1,0 +1,9 @@
+.DS_Store
+*.swp
+*.swo
+node_modules/
+.idea/
+.vscode/
+# Don't commit any locally-rendered talk artifacts
+talk/*.html
+talk/*.pdf

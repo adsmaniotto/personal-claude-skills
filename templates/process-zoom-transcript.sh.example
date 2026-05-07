@@ -1,0 +1,95 @@
+#!/bin/bash
+# Triggered by Hammerspoon after a Zoom meeting ends.
+# Finds the newest Superwhisper recording, looks up the matching calendar event,
+# and uses Claude to write structured notes into the Obsidian vault + daily note.
+
+set -euo pipefail
+
+VAULT="<<VAULT_PATH>>"
+RECORDINGS="$HOME/Documents/superwhisper/recordings"
+LOG="/tmp/zoom-transcript.log"
+
+exec >>"$LOG" 2>&1
+echo "=== $(date) ==="
+
+NEWEST=$(ls -1t "$RECORDINGS" | head -1)
+META="$RECORDINGS/$NEWEST/meta.json"
+
+if [ ! -f "$META" ]; then
+  osascript -e 'display notification "No Superwhisper recording found" with title "Zoom Transfer"'
+  exit 1
+fi
+
+# Superwhisper finalizes transcription asynchronously after recording stops.
+# Longer meetings take longer to transcribe — poll meta.json until result+duration
+# are populated, or we hit the timeout.
+MAX_WAIT_SEC=300  # 5 min — covers multi-hour meetings
+POLL_INTERVAL=5
+elapsed=0
+while true; do
+  TRANSCRIPT=$(jq -r '.result // ""' "$META")
+  DATETIME=$(jq -r '.datetime // ""' "$META")
+  DURATION_MS=$(jq -r '.duration // 0' "$META")
+  DURATION_SEC=$(( DURATION_MS / 1000 ))
+  CHAR_COUNT=${#TRANSCRIPT}
+  if [ "$DURATION_SEC" -gt 0 ] && [ "$CHAR_COUNT" -gt 0 ]; then
+    break
+  fi
+  if [ "$elapsed" -ge "$MAX_WAIT_SEC" ]; then
+    osascript -e "display notification \"Superwhisper never finalized (${elapsed}s wait)\" with title \"Zoom Transfer\""
+    echo "Timed out waiting for Superwhisper to finalize transcript after ${elapsed}s"
+    exit 0
+  fi
+  echo "Waiting for Superwhisper (dur=${DURATION_SEC}s, chars=${CHAR_COUNT}, elapsed=${elapsed}s)"
+  sleep "$POLL_INTERVAL"
+  elapsed=$(( elapsed + POLL_INTERVAL ))
+done
+
+# Superwhisper writes meta.json datetime in UTC with no TZ marker, but the prompt tells Claude
+# it's local Central. The recording folder name is the local unix timestamp — use that.
+DATETIME=$(date -r "$NEWEST" +"%Y-%m-%dT%H:%M:%S")
+
+if [ "$DURATION_SEC" -lt 30 ] || [ "$CHAR_COUNT" -lt 200 ]; then
+  osascript -e "display notification \"Skipped: recording too short (${DURATION_SEC}s, ${CHAR_COUNT} chars)\" with title \"Zoom Transfer\""
+  echo "Skipped: ${DURATION_SEC}s, ${CHAR_COUNT} chars"
+  exit 0
+fi
+
+echo "Processing recording $NEWEST ($DURATION_SEC s, $CHAR_COUNT chars) start=$DATETIME"
+osascript -e "display notification \"Summarizing transcript...\" with title \"Zoom Transfer\""
+
+PROMPT="A meeting just ended. Process the Superwhisper transcript into my Obsidian vault.
+
+You are running from the vault root, so the vault's CLAUDE.md is loaded as context — follow its 'Meeting Notes Style Guide' section for all formatting, wikilinking, action items, and structural decisions. The style guide is the source of truth; this prompt only covers the mechanical inputs.
+
+## Inputs
+
+- Recording meta.json: $META
+- Recording start (local Central time, no TZ): $DATETIME
+- Recording duration: $DURATION_SEC seconds
+- Recording ID: $NEWEST
+
+## Mechanical steps
+
+1. Read the 'result' field (transcript) from $META.
+
+2. Calendar lookup to get the real meeting title + attendees. Recording window = [\$DATETIME, \$DATETIME + $DURATION_SEC seconds]. Run:
+
+   gws calendar events list --params '{\"calendarId\": \"<<USER_EMAIL>>\", \"timeMin\": \"<start ISO with -05:00>\", \"timeMax\": \"<end ISO with -05:00>\", \"singleEvents\": true, \"orderBy\": \"startTime\"}' --format json
+
+   Filter out eventType in ['workingLocation', 'focusTime', 'outOfOffice'] and summaries matching Home / Office / BLOCK: / PTO / OOO. Pick the event whose start/end best overlaps the recording window. If no match, use title 'Untitled meeting (HH:MM)'.
+
+3. Discover vault entities at runtime to drive wikilinking — Glob people/*.md, projects/*.md, teams/*.md, team/*.md. Wikilink per the style guide in CLAUDE.md.
+
+4. Write the full notes file to zoom/YYYY-MM-DD HHMM - <sanitized title>.md with frontmatter (datetime, title, source=superwhisper, duration_sec=$DURATION_SEC, recording_id=$NEWEST, attendees array) + content per the style guide + a collapsed '> [!note]- Full transcript' callout containing the verbatim 'result'.
+
+5. Append structured notes to the daily note (daily/<YYYY-MM-DD from recording>.md) under '## Meetings' per the style guide. Skip the append if '### <title>' already exists there (duplicate).
+
+6. If the transcript is clearly not a real meeting (style guide covers this), skip all vault writes and print 'skipped: not a meeting'.
+
+Do not ask for confirmation. Do not print a recap. Just do the work."
+
+cd "$VAULT" && /usr/local/bin/claude --dangerously-skip-permissions -p "$PROMPT" < /dev/null
+
+osascript -e "display notification \"Transcript saved to vault\" with title \"Zoom Transfer\""
+echo "Done"

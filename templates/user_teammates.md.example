@@ -1,0 +1,27 @@
+---
+name: Your teammates
+description: List of people whose birthdays/Fetchiversaries are worth surfacing in /daily-notes
+type: user
+---
+
+# Teammates
+
+Used by `/daily-notes` to filter the org-wide birthdays/anniversaries calendar to *only* the people you actually work with.
+
+## Direct reports
+- Jane Doe
+- John Smith
+
+## Manager
+- Boss Person
+
+## Peers / cross-functional partners
+- Cross-Func Alice
+- Cross-Func Bob
+
+## Skip-level
+- Big Boss
+
+---
+
+*Adjust to your team. Names should match the display names that appear in the `Fetch Birthdays & Fetchiversary` (or equivalent) calendar.*

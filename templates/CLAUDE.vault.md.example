@@ -1,0 +1,51 @@
+# CLAUDE.md
+
+> Drop this in the root of your Obsidian vault. Claude Code reads it as project instructions when invoked from the vault directory.
+
+## Overview
+
+This is `<<USER_NAME>>`'s Obsidian vault, serving as a **second brain**. The vault captures information from morning voice dictations, meeting transcripts, synced Google Docs, and Confluence pages. It follows the [LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
+
+## Vault structure
+
+| Directory | Purpose |
+|-----------|---------|
+| `daily/` | Daily notes — usually start with raw voice dictation, then structured sections |
+| `people/` | Notes on individuals (direct reports, peers, leadership) |
+| `projects/` | Project context — design docs, roadmaps, strategies |
+| `teams/` | Cross-team references |
+| `google-docs/` | Synced Google Docs (via `/gdocs-sync`) |
+| `confluence/` | Synced Confluence pages (via `/confluence-sync`) |
+| `zoom/` | Synced meeting notes (via `/meeting-sync` or `/transfer-notes`) |
+| `drafts/` | Work-in-progress documents |
+
+## Conventions
+
+- **Daily notes** at `daily/YYYY-MM-DD.md`. Often start with `> [!note]- Raw dictation` callout.
+- **Action items** use Obsidian Tasks format: `- [ ] Task description 📅 YYYY-MM-DD`
+- **Wikilinks** (`[[Name]]`) cross-reference people, projects, concepts.
+
+## How to help in this vault
+
+- **Morning workflow**: when I start the day, `/daily-notes` pulls the dictation and structures it.
+- **After meetings**: `/meeting-sync` and `/transfer-notes` move meeting content into the vault.
+- **Knowledge building**: process fleeting notes into permanent notes; cross-link aggressively.
+- **Reviews + strategy**: when helping with these, pull from daily notes + project context.
+
+## Wiki layer (Karpathy pattern)
+
+Two layers, both important:
+
+- **Raw sources** (immutable): `confluence/`, `google-docs/`, `zoom/`, `daily/`. Sync skills write here. **Never edit these files** — they're external source-of-truth.
+- **Wiki layer** (Claude-maintained): `projects/`, `drafts/`, `teams/`, `people/`. This is where synthesis lives — Claude can create, edit, refactor here freely.
+
+Three root files:
+- `index.md` — Claude-maintained catalog of the wiki layer (LLM-readable navigation surface)
+- `log.md` — append-only record of meaningful Claude operations against the vault
+- `dashboard.md` — self-maintaining via Dataview (live views for human consumption)
+
+## Do not
+
+- Reorganize the vault structure without asking
+- Delete or archive notes without confirmation
+- Strip raw dictation from daily notes — it's source material
