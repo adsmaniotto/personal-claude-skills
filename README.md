@@ -11,14 +11,15 @@ These are the actual Claude Code skills powering my morning routine, my meeting-
 ├── README.md          ← this file
 ├── SETUP.md           ← step-by-step config swaps
 ├── prereqs.md         ← CLI/MCP installs you'll need
-├── skills/            ← seven genericized skills
+├── skills/            ← genericized skills
 │   ├── daily-notes/
 │   ├── slack-catchup/
 │   ├── gmail-triage/
 │   ├── meeting-sync/
 │   ├── integrate-into-wiki/
 │   ├── transfer-notes/
-│   └── obsidian-cli/
+│   ├── obsidian-cli/
+│   └── print-md/
 ├── templates/         ← example config files
 │   ├── user_teammates.md.example
 │   ├── process-zoom-transcript.sh.example
