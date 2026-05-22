@@ -19,7 +19,7 @@ These are the actual Claude Code skills powering my morning routine, my meeting-
 │   ├── integrate-into-wiki/
 │   ├── transfer-notes/
 │   ├── obsidian-cli/
-│   └── print-md/
+│   └── print-doc/
 ├── templates/         ← example config files
 │   ├── user_teammates.md.example
 │   ├── process-zoom-transcript.sh.example

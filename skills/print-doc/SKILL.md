@@ -1,5 +1,5 @@
 ---
-name: print-md
+name: print-doc
 description: >
   Print a document to the default printer. Accepts a markdown file (vault path
   or shorthand), a Google Docs URL, a Google Slides URL, a Google Drive file
@@ -57,7 +57,7 @@ Optional flags (parse from the user's message):
 Always work in a temp directory with named files. Do NOT use `mktemp -t prefix.ext` — on macOS that appends random chars after your template, so the file ends up without the expected extension, and Chrome will print HTML source as text instead of rendering it. Use `mktemp -d` and name the files yourself.
 
 ```bash
-TMP=$(mktemp -d -t print-md)
+TMP=$(mktemp -d -t print-doc)
 PDF="$TMP/out.pdf"
 ```
 
